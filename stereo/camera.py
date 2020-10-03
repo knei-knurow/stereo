@@ -85,10 +85,7 @@ def transform(frames, transformations):
             frame = function(frames[i], *args)
             frames[i] = frame
     
-    if len(frames) == 1:
-        return frames[0]
-    else:
-        return frames
+    return frames
 
 def capture(devices=0, width=DEF_WIDTH, height=DEF_HEIGHT, transformations=None,
     api=DEF_API):
@@ -127,7 +124,10 @@ def capture(devices=0, width=DEF_WIDTH, height=DEF_HEIGHT, transformations=None,
     
     frames = transform(frames, transformations)
 
-    return frames
+    if len(frames) == 1:
+        return frames[0]
+    else:
+        return frames
 
 def capture_rgb(devices=0, width=DEF_WIDTH, height=DEF_HEIGHT, 
     transformations=None):
@@ -151,11 +151,27 @@ def capture_gray(devices=0, width=DEF_WIDTH, height=DEF_HEIGHT,
     return capture(devices=devices, width=width, height=height, 
         transformations=transformations)
 
-def stream(update_fn, devices=0, width=DEF_WIDTH, height=DEF_HEIGHT, transformations=None,
-    api=DEF_API, cleanup_fn=None):
+def _stream_default_update(frames):
+    for idx, frame in enumerate(frames):
+        cv.imshow("Stream " + str(idx), frame)
+
+    if cv.waitKey(1) == ord("q"):
+        return -1
+    return 0
+
+def _stream_default_cleanup():
+    cv.destroyAllWindows()
+
+def stream(devices=0, width=DEF_WIDTH, height=DEF_HEIGHT, transformations=None,
+    api=DEF_API, update_fns=None, cleanup_fns=None):
     if not isinstance(devices, (tuple, list)):
         devices = (devices,)
     
+    if update_fns is None:
+        update_fns = [_stream_default_update]
+        if cleanup_fns is None:
+            cleanup_fns = [_stream_default_cleanup]
+
     if transformations is None:
         transformations = []
 
@@ -186,32 +202,16 @@ def stream(update_fn, devices=0, width=DEF_WIDTH, height=DEF_HEIGHT, transformat
 
             transformed = transform(frames, transformations)
 
-            ret = update_fn(transformed)
-            if ret == -1:
-                running = False
+            for update_fn in update_fns:
+                if update_fn(transformed) == -1:
+                    running = False
+
     except KeyboardInterrupt:
         pass
     
     for camera in cameras:
         camera.release()
-    if cleanup_fn is not None:
-        cleanup_fn()
 
-def _stream_cv_update(frames):
-    if isinstance(frames, list):
-        for idx, frame in enumerate(frames):
-            cv.imshow("Stream " + str(idx), frame)
-    else:
-        cv.imshow("Stream", frames)
-    if cv.waitKey(1) == ord("q"):
-        return -1
-    return 0
-
-def _stream_cv_cleanup():
-    cv.destroyAllWindows()
-
-def stream_cv(devices=0, width=DEF_WIDTH, height=DEF_HEIGHT,
-    transformations=None, api=DEF_API):
-    stream(update_fn=_stream_cv_update, devices=devices, width=width,
-        height=height, transformations=transformations, api=api, 
-        cleanup_fn=_stream_cv_cleanup)
+    if cleanup_fns is not None:
+        for cleanup_fn in cleanup_fns:
+            cleanup_fn()
