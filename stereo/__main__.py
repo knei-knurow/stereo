@@ -1,19 +1,12 @@
 from stereo import camera
+import stereo
 import cv2 as cv
 
 
-
+stereo.camera.stream_cv((0, 1, 2), transformations=[
+    [cv.cvtColor, cv.COLOR_BGR2GRAY]
+])
 print("Hello world")
-transformations = [
-    [cv.flip, 0],
-    [cv.resize, (600, 200)],
-    [cv.GaussianBlur, (11, 11), 100]
-]
-
-x = camera.capture_rgb(0, transformations=transformations)
-
-cv.imshow("window", x)
-cv.waitKey(0)
 cv.destroyAllWindows()
 
 
