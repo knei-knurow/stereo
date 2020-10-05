@@ -2,6 +2,7 @@ from .camera import DEF_SIZE
 import cv2 as cv
 import numpy as np
 import os
+import yaml
 from abc import ABC, abstractmethod
 
 DEF_CALIB_IMG_PATH = os.path.normpath("calibration")
@@ -24,6 +25,8 @@ class NotCalibrated(CalibrationError):
 class Calibration(ABC):
     @abstractmethod
     def __init__(self):
+        self.calibrated = False
+
         self.calibration_path = DEF_CALIB_IMG_PATH
         self.pattern_size = (7, 7)
         self.pattern_square_size = 1.0
@@ -60,6 +63,7 @@ class Calibration(ABC):
 
     def _find_chessboards(self, imgs, keep_preview_imgs=False, 
         return_nones=False):
+        """Find chessboards in the given images."""
         img_pts = []
         preview_imgs = []
         for img in imgs:
@@ -109,25 +113,23 @@ class Calibration(ABC):
     def load(self):
         pass
 
-    def _reprojection_error(self, obj_pts, img_pts, rot_vec, trans_vec, matrix,
-        dist_coeff):
-        """Calclate re-projection error."""
+    def _calculate_reprojection_error(self, obj_pts, img_pts, rot_vec,
+        trans_vec, matrix, dist_coeff):
+        """Calculate re-projection error (requires calibration)."""
         error = 0
         for i in range(len(obj_pts)):
             projected_img_pts, _ = cv.projectPoints(obj_pts[i], rot_vec[i], 
                 trans_vec[i], matrix, dist_coeff)
             error += cv.norm(img_pts[i], projected_img_pts, cv.NORM_L2) \
                 / len(projected_img_pts)
-        return error
+        return error / len(obj_pts)
 
     @abstractmethod
-    def reprojection_error(self):
+    def calculate_reprojection_error(self):
         pass
 
     def _undistort(self, img, matrix, dist_coeff, crop=True):
-        if matrix is None or dist_coeff is None or crop is None:
-            raise NotCalibrated()
-
+        """Undistord given image (requires calibration)."""
         new_matrix, roi = cv.getOptimalNewCameraMatrix(matrix, dist_coeff,
             (self.width, self.height), 0)
 
@@ -138,9 +140,6 @@ class Calibration(ABC):
 
         return undistorted_img
     
-
-        
-
 class Calibration2Cams(Calibration):
     def __init__(self):
         super().__init__()
@@ -162,6 +161,15 @@ class Calibration2Cams(Calibration):
         self.right_dist_coeff = None
         self.right_rot_vec = None
         self.right_trans_vec = None
+        self.both_rot_matrix = None
+        self.both_trans_vec = None
+
+        self.left_rectif = None
+        self.right_rectif = None
+        self.left_proj = None
+        self.right_proj = None
+        self.left_roi = None
+        self.right_roi = None
 
         self.left_reprojection_error = None
         self.right_reprojection_error = None
@@ -184,21 +192,21 @@ class Calibration2Cams(Calibration):
         right_img_pts, right_chessboard_preview_imgs = self._find_chessboards(
             self.right_imgs, keep_chessboard_preview_imgs, True
         )
-        # Add only pairs with both valid images
+        # Set only pairs with both valid images
         valid_pairs_cnt = 0
         for i in range(len(left_img_pts)):
             if (not left_img_pts[i] is None) and (not right_img_pts[i] is None):
                 valid_pairs_cnt += 1
                 self.left_img_pts.append(left_img_pts[i])
                 self.right_img_pts.append(right_img_pts[i])
-                # Add chessboard preview images if necessary
+                # Set chessboard preview images if necessary
                 if keep_chessboard_preview_imgs:
                     self.left_chessboard_preview_imgs.append(
                         left_chessboard_preview_imgs[i])
                     self.right_chessboard_preview_imgs.append(
                         right_chessboard_preview_imgs[i])
 
-        # Add chessboard points as object points
+        # Set chessboard points as object points
         obj = np.zeros((7 * 7, 3), np.float32)
         obj[:, :2] = np.mgrid[0:7, 0:7].T.reshape(-1, 2) \
             * self.pattern_square_size
@@ -207,24 +215,22 @@ class Calibration2Cams(Calibration):
         return valid_pairs_cnt
     
     def calibrate(self):
+        """Perform a complete calibration process."""
         # Calibrate left camera
         _, left_matrix, left_dist_coeff, left_rot_vec, left_trans_vec = \
             cv.calibrateCamera(self.obj_pts, self.left_img_pts,
             (self.width, self.height), None, None
         )
-        # Calibrate right camera
-        _, right_matrix, right_dist_coeff, right_rot_vec, right_trans_vec = \
-            cv.calibrateCamera(self.obj_pts, self.right_img_pts,
-            (self.width, self.height), None, None
-        )
-
-        # Add left camera coefficients
         self.left_matrix = left_matrix
         self.left_dist_coeff = left_dist_coeff
         self.left_rot_vec = left_rot_vec
         self.left_trans_vec = left_trans_vec
 
-        # Add right camera coefficients
+        # Calibrate right camera
+        _, right_matrix, right_dist_coeff, right_rot_vec, right_trans_vec = \
+            cv.calibrateCamera(self.obj_pts, self.right_img_pts,
+            (self.width, self.height), None, None
+        )
         self.right_matrix = right_matrix
         self.right_dist_coeff = right_dist_coeff
         self.right_rot_vec = right_rot_vec
@@ -240,169 +246,126 @@ class Calibration2Cams(Calibration):
             cv.CALIB_FIX_INTRINSIC,
             (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.001)
         )
-
-        # Add both cameras coefficients
         self.both_rot_matrix = rot_matrix
-        self.both_trans_ves = trans_vec
+        self.both_trans_vec = trans_vec
 
-    def save(self):
-        pass
+        # Rectify cameras
+        self.left_rectif, self.right_rectif, self.left_proj, self.right_proj, \
+            _, self.left_roi, self.right_roi = cv.stereoRectify(
+                self.left_matrix, self.left_dist_coeff,
+                self.right_matrix, self.right_dist_coeff,
+                (self.width, self.height), 
+                self.both_rot_matrix, self.both_trans_vec,
+                None, None, None, None, None,
+                cv.CALIB_ZERO_DISPARITY, 0.25
+        )
 
-    def load(self):
-        pass
+        self.calibrated = True
 
-    def reprojection_error(self):
+        # Set re-projection error
+        self.left_reprojection_error, self.right_reprojection_error = \
+            self.calculate_reprojection_error()
+
+    def get_dict(self, numpy2list=False):
+        """Return a dict with important calibration parameters."""
+        params = {
+            "calibrated":self.calibrated,
+            "left_matrix":self.left_matrix,
+            "left_dist_coeff":self.left_dist_coeff,
+            "left_rectif":self.left_rectif,
+            "left_proj":self.left_proj,
+            "left_roi":self.left_roi,
+            "left_reprojection_error":self.left_reprojection_error,
+            "right_matrix":self.right_matrix,
+            "right_dist_coeff":self.right_dist_coeff,
+            "right_rectif":self.right_rectif,
+            "right_proj":self.right_proj,
+            "right_roi":self.right_roi,
+            "right_reprojection_error":self.right_reprojection_error,
+            "both_rot_matrix":self.both_rot_matrix,
+            "both_trans_vec":self.both_trans_vec,
+        }
+        if numpy2list:
+            for key, value in params.items():
+                if isinstance(value, np.ndarray):
+                    params[key] = value.tolist()
+        return params
+
+    def save(self, filename):
+        """Save important calibration parameters to the specified file."""
+        params = self.get_dict(True)
+        with open(filename, "w") as file:
+            _ = yaml.dump(params, file)
+        return params
+
+    def load(self, filename):
+        """Load important calibration parameters from the specified file."""
+        with open(filename, "r") as file:
+            params = yaml.load(file)
+
+        for value in params.values():
+            if value is None:
+                raise NotCalibrated()
+
+        for key, value in params.items():
+            if isinstance(value, list):
+                params[key] = np.array(value)
+
+        self.calibrated = params["calibrated"]
+        self.left_matrix = params["left_matrix"]
+        self.left_dist_coeff = params["left_dist_coeff"]
+        self.left_rectif = params["left_rectif"]
+        self.left_proj = params["left_proj"]
+        self.left_roi = params["left_roi"]
+        self.left_reprojection_error = params["left_reprojection_error"]
+        self.right_matrix = params["right_matrix"]
+        self.right_dist_coeff = params["right_dist_coeff"]
+        self.right_rectif = params["right_rectif"]
+        self.right_proj = params["right_proj"]
+        self.right_roi = params["right_roi"]
+        self.right_reprojection_error = params["right_reprojection_error"]
+        self.both_rot_matrix = params["both_rot_matrix"]
+        self.both_trans_vec = params["both_trans_vec"]
+
+        return params
+
+    def calculate_reprojection_error(self):
+        """Calculate re-projection errors for left and right camera or return
+           already calculated ones (requires calibration).
+        """
+        if not self.calibrated:
+            raise NotCalibrated()
+
+        # If errors are already calculated, return them
+        if self.left_rot_vec is None or self.left_trans_vec is None \
+            or self.right_rot_vec is None or self.right_trans_vec is None:
+            return self.left_reprojection_error, self.right_reprojection_error
+
         # Left camera re-projection
-        if not (self.obj_pts == None or self.left_img_pts == None
-            or self.left_rot_vec == None or self.left_trans_vec == None
-            or self.left_matrix == None or self.left_dist_coeff == None):
-
-            self.left_reprojection_error = self._reprojection_error(
-                self.obj_pts, self.left_img_pts, self.left_rot_vec, 
-                self.left_trans_vec, self.left_matrix, self.left_dist_coeff
-            )
-        
+        left_reprojection_error = self._calculate_reprojection_error(
+            self.obj_pts, self.left_img_pts, self.left_rot_vec, 
+            self.left_trans_vec, self.left_matrix, self.left_dist_coeff
+        )
         # Right camera re-projection
-        if not (self.obj_pts == None or self.right_img_pts == None
-            or self.right_rot_vec == None or self.right_trans_vec == None
-            or self.right_matrix == None or self.right_dist_coeff == None):
+        right_reprojection_error = self._calculate_reprojection_error(
+            self.obj_pts, self.right_img_pts, self.right_rot_vec, 
+            self.right_trans_vec, self.right_matrix, self.right_dist_coeff
+        )
 
-            self.right_reprojection_error = self._reprojection_error(
-                self.obj_pts, self.right_img_pts, self.right_rot_vec, 
-                self.right_trans_vec, self.right_matrix, self.right_dist_coeff
-            )
+        return left_reprojection_error, right_reprojection_error
 
     def undistort_left(self, img, crop=True):
         """Undistort image captured by left camera (requires calibration)."""
+        if not self.calibrated:
+            raise NotCalibrated()
+
         return self._undistort(img, self.left_matrix, self.left_dist_coeff, 
             crop)
 
     def undistort_right(self, img, crop=True):
         """Undistort image captured by right camera (requires calibration)."""
+        if not self.calibrated:
+            raise NotCalibrated()
+
         return self._undistort(img, self.right_matrix, self.right_dist_coeff, 
             crop)
-    
-DEF_CALIB_IMG_PATH = os.path.normpath("calibration")
-DEF_CALIB_LEFT_IMG_PATH = os.path.join(DEF_CALIB_IMG_PATH, "left")
-DEF_CALIB_RIGHT_IMG_PATH = os.path.join(DEF_CALIB_IMG_PATH, "right")
-
-DEF_CALIB_IMG_PAIR_PATH = os.path.join(DEF_CALIB_IMG_PATH, "pair")
-DEF_CALIB_LEFT_IMG_PAIR_PATH = os.path.join(DEF_CALIB_IMG_PAIR_PATH, "left")
-DEF_CALIB_RIGHT_IMG_PAIR_PATH = os.path.join(DEF_CALIB_IMG_PAIR_PATH, "right")
-
-DEF_CB_PATTERN_SIZE = (7, 7)
-DEF_CB_SQUARE_SIZE = 1.0
-
-def load_calib_imgs(paths):
-    """Load set of images from the given paths."""
-    if not isinstance(paths, (tuple, list)):
-        paths = (paths,)
-
-    groups = []
-    for path in paths:
-        images = []
-        for f in os.listdir(path):
-            image = cv.imread(os.path.join(path, f))
-            image = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
-            images.append(image)
-        groups.append(images)
-    
-    return groups
-
-def load_2cams_calib_imgs():
-    return load_calib_imgs((DEF_CALIB_LEFT_IMG_PATH, DEF_CALIB_RIGHT_IMG_PATH,
-        DEF_CALIB_LEFT_IMG_PAIR_PATH, DEF_CALIB_RIGHT_IMG_PAIR_PATH)
-    )
-
-def find_chessboards(imgs, pattern_size=DEF_CB_PATTERN_SIZE,
-    square_size=DEF_CB_SQUARE_SIZE, return_nones=False):
-    obj_pts = []
-    img_pts = []
-    for img in imgs:
-        # Find chessboard corners
-        ret, corners = cv.findChessboardCorners(img, pattern_size,
-            cv.CALIB_CB_ADAPTIVE_THRESH
-            | cv.CALIB_CB_NORMALIZE_IMAGE 
-            | cv.CALIB_CB_FAST_CHECK
-        )
-        
-        # If no corners found, continue
-        if not ret:
-            if return_nones:
-                obj_pts.append(None)
-                img_pts.append(None)
-            continue
-        
-        # Increase the accuracy of corner points
-        corners = cv.cornerSubPix(img, corners, (11, 11), (-1, -1), 
-            (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.001)
-        )
-
-        # Add chessboard points as object points
-        obj = np.zeros((7 * 7, 3), np.float32)
-        obj[:, :2] = np.mgrid[0:7, 0:7].T.reshape(-1, 2) * square_size
-        obj_pts.append(obj)
-
-        # Add chessboard points as image points
-        img_pts.append(corners)
-    return obj_pts, img_pts
-
-def _find_pair_chessboards(imgs0, imgs1, pattern_size=DEF_CB_PATTERN_SIZE):
-    obj_pts, img0_pts = find_chessboards(imgs0, pattern_size, True)
-    _, img1_pts = find_chessboards(imgs1, pattern_size, True)
-
-    for i in range(len(obj_pts)):
-        if img0_pts[i] == None or img1_pts[i] == None:
-            del img0_pts[i], img1_pts[i]
-            del obj_pts[i]
-    
-    return obj_pts, img0_pts, img1_pts
-
-def find_2cams_chessboards(left_imgs, right_imgs, left_pair_imgs,
-    right_pair_imgs, pattern_size=DEF_CB_PATTERN_SIZE):
-
-    obj_pts, left_img_pair_pts, right_img_pair_pts = _find_pair_chessboards(
-        left_pair_imgs, right_pair_imgs, pattern_size)
-
-    obj_pair_pts, left_img_pts = find_chessboards(left_imgs, pattern_size)
-    _, right_img_pts = find_chessboards(right_imgs, pattern_size)
-
-    return (obj_pts, left_img_pts, right_img_pts, 
-        obj_pair_pts, left_img_pair_pts, right_img_pair_pts)
-
-def calibrate_cam(obj_pts, img_pts, size=DEF_SIZE):
-    _, matrix, distortion_coeff, rot_vec, trans_vec = cv.calibrateCamera(
-        obj_pts, img_pts, size, None, None
-    )
-    
-    return matrix, distortion_coeff, rot_vec, trans_vec
-
-def calibrate_2cams(obj_pts, left_img_pts, right_img_pts, size):
-    left_matrix, left_dist_coeff, left_rot_vec, left_trans_vec = \
-        calibrate_cam(obj_pts, left_img_pts, size)
-
-    right_matrix, right_dist_coeff, right_rot_vec, right_trans_vec = \
-        calibrate_cam(obj_pts, right_img_pts, size)
-
-    _, _, _, _, _, rot_vec, trans_vec, _, _ = cv.stereoCalibrate(
-        obj_pts,
-        left_img_pts, right_img_pts,
-        left_matrix, left_dist_coeff,
-        right_matrix, right_dist_coeff,
-        size, None, None, None, None,
-        cv.CALIB_FIX_INTRINSIC,
-        (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.001)
-    )
-
-    return left_matrix, left_dist_coeff, left_rot_vec, left_trans_vec, \
-        right_matrix, right_dist_coeff, right_rot_vec, right_trans_vec, \
-        rot_vec, trans_vec
-
-def calculate_reprojection_err(obj_pts, rot_vec, trans_vec, matrix, dist_coeff):
-    pass
-
-def save_2cams_calibration():
-    pass
-
-def load_2cams_calibration():
-    pass
