@@ -1,4 +1,4 @@
-from .camera import DEF_SIZE
+from .cameras import DEF_SIZE
 from .exceptions import *
 import cv2 as cv
 import numpy as np
@@ -165,14 +165,18 @@ class Calibration2Cams(Calibration):
         """Load set of corresponding left and right images from 
            calibration_path/left and calibration_path/right.
         """
+        logging.info("Loading sets of corresponding left and right images "
+            "from {}.".format(self.calibration_path))
         self.left_imgs, self.right_imgs = self._load_images([
             os.path.join(self.calibration_path, "left"),
             os.path.join(self.calibration_path, "right")]
         )
+        logging.info("Loaded {} pairs.".format(len(self.left_imgs)))
         return len(self.left_imgs)
 
     def find_chessboards(self, keep_chessboard_preview_imgs=False):
         # Get chessboard points as image points
+        logging.info("Finding chessboard patterns in the images.")
         left_img_pts, left_chessboard_preview_imgs = self._find_chessboards(
             self.left_imgs, keep_chessboard_preview_imgs, True
         )
@@ -192,6 +196,9 @@ class Calibration2Cams(Calibration):
                         left_chessboard_preview_imgs[i])
                     self.right_chessboard_preview_imgs.append(
                         right_chessboard_preview_imgs[i])
+        logging.info("Found chessboard patterns in {} pairs.".format(
+            valid_pairs_cnt)
+        )
 
         # Set chessboard points as object points
         obj = np.zeros((7 * 7, 3), np.float32)
@@ -207,14 +214,15 @@ class Calibration2Cams(Calibration):
             self.load_images()
 
         if len(self.left_imgs) == 0:
-            raise NoCalibrationImages()
+            logging.warning("No calibration images loaded.")
+            self.load_images()
 
         if len(self.left_imgs) != len(self.right_imgs):
             raise CalibrationImagesNotMatch()
 
         self.find_chessboards(keep_chessboard_preview_imgs)
 
-        # Calibrate left camera
+        logging.info("Calibrating left camera.")
         _, left_matrix, left_dist_coeff, left_rot_vec, left_trans_vec = \
             cv.calibrateCamera(self.obj_pts, self.left_img_pts,
             (self.width, self.height), None, None
@@ -224,7 +232,7 @@ class Calibration2Cams(Calibration):
         self.left_rot_vec = left_rot_vec
         self.left_trans_vec = left_trans_vec
 
-        # Calibrate right camera
+        logging.info("Calibrating right camera.")
         _, right_matrix, right_dist_coeff, right_rot_vec, right_trans_vec = \
             cv.calibrateCamera(self.obj_pts, self.right_img_pts,
             (self.width, self.height), None, None
@@ -234,7 +242,7 @@ class Calibration2Cams(Calibration):
         self.right_rot_vec = right_rot_vec
         self.right_trans_vec = right_trans_vec
 
-        # Calibrate both cameras together
+        logging.info("Calibrating both cameras.")
         _, _, _, _, _, rot_matrix, trans_vec, _, _ = cv.stereoCalibrate(
             self.obj_pts,
             self.left_img_pts, self.right_img_pts,
@@ -247,7 +255,7 @@ class Calibration2Cams(Calibration):
         self.both_rot_matrix = rot_matrix
         self.both_trans_vec = trans_vec
 
-        # Rectify cameras
+        logging.info("Rectifying cameras.")
         self.left_rectif, self.right_rectif, self.left_proj, self.right_proj, \
             _, self.left_roi, self.right_roi = cv.stereoRectify(
                 self.left_matrix, self.left_dist_coeff,
@@ -263,6 +271,10 @@ class Calibration2Cams(Calibration):
         # Set re-projection error
         self.left_reprojection_error, self.right_reprojection_error = \
             self.calculate_reprojection_error()
+        logging.info("Calibration finished. Re-projection errors: {}, {}."
+            .format(self.left_reprojection_error, 
+            self.right_reprojection_error)
+        )
 
     def get_dict(self, numpy2list=False):
         """Return a dict with important calibration parameters."""
@@ -291,6 +303,9 @@ class Calibration2Cams(Calibration):
 
     def save(self, filename):
         """Save important calibration parameters to the specified file."""
+        logging.info("Saving important calibration parameters to {}."
+            .format(filename)
+        )
         params = self.get_dict(True)
         with open(filename, "w") as file:
             _ = yaml.dump(params, file)
@@ -298,7 +313,9 @@ class Calibration2Cams(Calibration):
 
     def load(self, filename):
         """Load important calibration parameters from the specified file."""
-        logging.info("Loading set of images from {}".format(filename))
+        logging.info("Loading important calibration parameters {}"
+            .format(filename)
+        )
         
         with open(filename, "r") as file:
             params = yaml.load(file)

@@ -6,30 +6,30 @@ from IPython.display import clear_output, display
 from PIL import Image
 import io
 
-def img_nb(array):
+def nbimg(array):
     """Display numpy array image as Jupyter notebook cell output."""
     display(Image.fromarray(array))
 
-def capture_nb(devices=0):
+def nbcapture(devices=0):
     """Capture image and display it as Jupyter notebook cell output."""
     frames = capture_rgb(devices)
     if isinstance(frames, (tuple, list)):
         for frame in frames:
-            img_nb(frame)
+            nbimg(frame)
     else:
-        img_nb(frames)
+        nbimg(frames)
 
-def capture_gray_nb(devices=0):
+def nbcapture_gray(devices=0):
     """Capture grayscaled image and display it as Jupyter notebook cell output.
     """
     frames = capture_gray(devices)
     if isinstance(frames, (tuple, list)):
         for frame in frames:
-            img_nb(frame)
+            nbimg(frame)
     else:
-        img_nb(frames)
+        nbimg(frames)
 
-def _stream_nb_update(frames, widgets):
+def _nbstream_update(frames, widgets):
     for frame, widget in zip(frames, widgets):
         bytes_stream = io.BytesIO()
         Image.fromarray(frame).save(bytes_stream, format="jpeg")
@@ -37,10 +37,10 @@ def _stream_nb_update(frames, widgets):
 
     return 0
 
-def _stream_nb_cleanup(widgets):
+def _nbstream_cleanup(widgets):
     pass
 
-def stream_nb(devices=0, width=DEF_WIDTH, height=DEF_HEIGHT, 
+def nbstream(devices=0, width=DEF_WIDTH, height=DEF_HEIGHT, 
     transformations=None, api=DEF_API, update_fns=None, cleanup_fns=None):
     if not isinstance(devices, (list, tuple)):
         devices = (devices,)
@@ -54,8 +54,8 @@ def stream_nb(devices=0, width=DEF_WIDTH, height=DEF_HEIGHT,
         update_fns = []
     if cleanup_fns is None:
         cleanup_fns = []
-    update_fns = (lambda frames: _stream_nb_update(frames, widgets), *update_fns)
-    cleanup_fns = (lambda: _stream_nb_cleanup(widgets), *cleanup_fns)
+    update_fns = (lambda frames: _nbstream_update(frames, widgets), *update_fns)
+    cleanup_fns = (lambda: _nbstream_cleanup(widgets), *cleanup_fns)
 
     if transformations is None:
         transformations = []
