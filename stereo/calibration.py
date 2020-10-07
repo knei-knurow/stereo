@@ -1,26 +1,13 @@
 from .camera import DEF_SIZE
+from .exceptions import *
 import cv2 as cv
 import numpy as np
 import os
 import yaml
+import logging
 from abc import ABC, abstractmethod
 
-DEF_CALIB_IMG_PATH = os.path.normpath("calibration")
-
-class CalibrationError(Exception):
-    """Calibration error class."""
-    pass
-
-class DimentionsNotMatch(CalibrationError):
-    """The dimensions of images used for calibration do not match."""
-    pass
-    
-class NoCalibrationImages(CalibrationError):
-    """No valid calibration images found in the specified path."""
-    pass
-
-class NotCalibrated(CalibrationError):
-    """Action cannot be completed without performed calibration."""
+DEF_CALIB_IMG_PATH = os.path.normpath("calibrated")
 
 class Calibration(ABC):
     @abstractmethod
@@ -50,7 +37,7 @@ class Calibration(ABC):
                     self.width, self.height = image.shape[1], image.shape[0]
                 elif self.width != image.shape[1] or \
                     self.height != image.shape[0]:
-                    raise DimentionsNotMatch()
+                    raise CalibrationDimentionsNotMatch()
                     
                 images.append(image)
             groups.append(images)
@@ -214,8 +201,19 @@ class Calibration2Cams(Calibration):
 
         return valid_pairs_cnt
     
-    def calibrate(self):
+    def calibrate(self, load_images=False, keep_chessboard_preview_imgs=False):
         """Perform a complete calibration process."""
+        if load_images:
+            self.load_images()
+
+        if len(self.left_imgs) == 0:
+            raise NoCalibrationImages()
+
+        if len(self.left_imgs) != len(self.right_imgs):
+            raise CalibrationImagesNotMatch()
+
+        self.find_chessboards(keep_chessboard_preview_imgs)
+
         # Calibrate left camera
         _, left_matrix, left_dist_coeff, left_rot_vec, left_trans_vec = \
             cv.calibrateCamera(self.obj_pts, self.left_img_pts,
@@ -300,6 +298,8 @@ class Calibration2Cams(Calibration):
 
     def load(self, filename):
         """Load important calibration parameters from the specified file."""
+        logging.info("Loading set of images from {}".format(filename))
+        
         with open(filename, "r") as file:
             params = yaml.load(file)
 
