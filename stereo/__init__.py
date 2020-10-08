@@ -17,11 +17,9 @@ from .cameras import (
     Cameras,
 )
 from .exceptions import *
-from .notebook import (
-    nbimg,
-    nbcapture,
-    nbcapture_gray,
-    nbstream
+from .stream import (
+    Stream,
+    NStream,
 )
 
 start_logger()

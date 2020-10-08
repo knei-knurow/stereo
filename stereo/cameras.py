@@ -1,9 +1,12 @@
 from .exceptions import CameraCaptureError
 import cv2 as cv
 import numpy as np
-from collections.abc import Iterable
 import platform
 import sys
+import io
+import IPython
+import PIL.Image
+import ipywidgets
 
 DEF_IDS = [0]
 DEF_WIDTH = 640
@@ -40,9 +43,6 @@ class Cameras:
             self.transformations = []
         else:
             self.transformations = transformations
-
-        self.stream_update = self._stream_update
-        self.stream_cleanup = self._stream_cleanup
 
         self.frames = []
         for _ in range(len(self.devices)):
@@ -106,6 +106,11 @@ class Cameras:
                     args = []
                 self.frames[i] = function(self.frames[i], *args)
 
+    def capture_black_screen(self):
+        """Make all frames black."""
+        for frame in self.frames:
+            frame.fill(0)
+
     def capture(self):
         """Call cv.VideoCapture() for each device, transform recieved images and
         return as a list of numpy arrays.
@@ -157,18 +162,35 @@ class Cameras:
         #    frames[i] = cv.cvtColor(frames[i], cv.COLOR_BGR2GRAY)
         return frames
 
+    def show(self):
+        """Show all frames using OpenCV imshow function."""
+        for idx, frame in enumerate(self.frames):
+            cv.imshow("Frame " + str(idx), frame)
+        
+        cv.waitKey(0)
+        cv.destroyAllWindows()
+
+    def nshow(self):
+        """Show all frames using Jupyter Notebook cell output. Apply the
+           conversion from BGR to RGB before.
+        """
+        frames = self.frames.copy()
+        for frame in frames:
+            frame = cv.cvtColor(frame, cv.COLOR_BGR2RGB)
+            IPython.display.display(PIL.Image.fromarray(frame))
+
     def _stream_update(self):
         for idx, frame in enumerate(self.frames):
             cv.imshow("Stream " + str(idx), frame)
 
         if cv.waitKey(1) == ord("q"):
-            return -1
-        return 0
+            return False
+        return True
 
     def _stream_cleanup(self):
         cv.destroyAllWindows()
-
-    def stream(self):
+ 
+    def stream(self, update_fn=_stream_update, cleanup_fn=_stream_cleanup):
         cameras = []
         for device in self.devices:
             camera = cv.VideoCapture(device, self.api)
@@ -200,7 +222,7 @@ class Cameras:
 
                 self.transform()
 
-                if self.stream_update() == -1:
+                if update_fn(self) == False:
                     running = False
 
         except KeyboardInterrupt:
@@ -209,4 +231,4 @@ class Cameras:
         for camera in cameras:
             camera.release()
 
-        self.stream_cleanup()
+        cleanup_fn(self)
