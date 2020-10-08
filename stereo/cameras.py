@@ -158,8 +158,8 @@ class Cameras:
         to grayscale.
         """
         frames = self.capture()
-        # for i in range(len(frames)):
-        #    frames[i] = cv.cvtColor(frames[i], cv.COLOR_BGR2GRAY)
+        for i in range(len(frames)):
+            frames[i] = cv.cvtColor(frames[i], cv.COLOR_BGR2GRAY)
         return frames
 
     def show(self):
