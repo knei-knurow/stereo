@@ -14,7 +14,8 @@ DEF_MODE = 3
 
 _platform = platform.system()
 if  _platform == "Windows":
-    DEF_API = cv.CAP_DSHOW
+    # DEF_API = cv.CAP_DSHOW # Weird errors with messed up image array
+    DEF_API = cv.CAP_MSMF
 elif _platform == "Linux":
     DEF_API = cv.CAP_V4L2
 else:
@@ -45,7 +46,7 @@ class Cameras:
 
         self.frames = []
         for _ in range(len(self.devices)):
-            self.frames.append(np.zeros((self.height, self.width, 3)))
+            self.frames.append(np.zeros((self.height, self.width, 3), dtype=np.uint8))
 
     @staticmethod
     def list_backends():
@@ -125,13 +126,15 @@ class Cameras:
 
         for idx, camera in enumerate(cameras):
             ret, frame = camera.retrieve()
-            camera.release()
             if not ret:
                 for c in cameras:
                     c.release()
                 raise CameraCaptureError("Unable to retrieve image from cam", camera)
             self.frames[idx] = frame
         
+        for camera in cameras:
+            camera.release()
+
         self.transform()
 
         return self.frames
@@ -150,8 +153,8 @@ class Cameras:
         to grayscale.
         """
         frames = self.capture()
-        for i in range(len(frames)):
-            frames[i] = cv.cvtColor(frames[i], cv.COLOR_BGR2GRAY)
+        # for i in range(len(frames)):
+        #    frames[i] = cv.cvtColor(frames[i], cv.COLOR_BGR2GRAY)
         return frames
 
     def _stream_update(self):
