@@ -145,7 +145,7 @@ class Cameras:
         return self.frames
 
     def capture_rgb(self):
-        """Do the same what capture() but before all transformations convert colors
+        """Do the same what capture() but after all transformations convert colors
         to RGB.
         """
         frames = self.capture()
@@ -153,8 +153,8 @@ class Cameras:
             frames[i] = cv.cvtColor(frames[i], cv.COLOR_BGR2RGB)
         return frames
 
-    def capture_gray(self, transformations=None):
-        """Do the same what capture() but before all transformations convert colors
+    def capture_gray(self):
+        """Do the same what capture() but after all transformations convert colors
         to grayscale.
         """
         frames = self.capture()
