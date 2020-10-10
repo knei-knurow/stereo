@@ -172,6 +172,8 @@ class Calibration2Cams(Calibration):
             os.path.join(self.calibration_path, "right")]
         )
         logging.info("Loaded {} pairs.".format(len(self.left_imgs)))
+        if len(self.left_imgs) == 0:
+            raise NoCalibrationImages
         return len(self.left_imgs)
 
     def find_chessboards(self, keep_chessboard_preview_imgs=False):
@@ -201,8 +203,10 @@ class Calibration2Cams(Calibration):
         )
 
         # Set chessboard points as object points
-        obj = np.zeros((7 * 7, 3), np.float32)
-        obj[:, :2] = np.mgrid[0:7, 0:7].T.reshape(-1, 2) \
+        obj = np.zeros((self.pattern_size[0] * self.pattern_size[1], 3),
+            np.float32
+        )
+        obj[:, :2] = np.mgrid[0:self.pattern_size[0], 0:self.pattern_size[1]].T.reshape(-1, 2) \
             * self.pattern_square_size
         self.obj_pts = [obj] * valid_pairs_cnt
 

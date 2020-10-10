@@ -1,12 +1,10 @@
 import stereo as st
+import numpy as np
 import cv2 as cv
 
-while True:
-    c = st.Cameras([0, 1], transformations=[], api=cv.CAP_MSMF)
-    c.capture()
-    cv.imshow("0", c.frames[0])
-    if cv.waitKey(0) == ord("q"):
-        break
-cv.destroyAllWindows()
+c = st.Calibration2Cams()
+c.calibration_path = "calibration-images/2cam-csi-12cm"
+c.pattern_size = (9, 6)
+c.load_images()
 
-
+c.calibrate(True)
