@@ -36,13 +36,13 @@ class StereoVision2Cams(StereoVision):
         self.stereo.setSpeckleRange(16)
         self.stereo.setSpeckleWindowSize(45)
 
-        self.depth = np.zeros((self.calibration.width, self.calibration.height))
+        self.depth = None
 
     def calculate_depth(self, left, right):
         left = cv.remap(left, self.left_max_x, self.left_map_y, 
             cv.INTER_LINEAR
         )
-        right = cv.remap(right, self.left_max_x, self.right_map_y,
+        right = cv.remap(right, self.right_max_x, self.right_map_y,
             cv.INTER_LINEAR
         )
 

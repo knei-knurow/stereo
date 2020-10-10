@@ -77,3 +77,34 @@ class NStream(Stream):
 
     def stop(self):
         self.running = False
+        
+class DepthStream(Stream):
+    def __init__(self, cameras, stereo, sep_thread=True):
+        super().__init__(cameras)
+        self._sep_thread = sep_thread
+        self.stereo = stereo
+
+    def _setup(self, cameras):
+        logging.info("Starting depth map stream.")
+        self._update(cameras)
+
+    def _update(self, cameras):
+        depth = self.stereo.calculate_depth(cameras.frames[0], cameras.frames[1])
+        # depth2 = ((depth - depth.min()) * 255).astype(np.uint8)
+        cv.imshow("Depth", depth)
+        if cv.waitKey(1) == ord("q"):
+            return False
+        return self.running
+
+    def _cleanup(self, cameras):
+        pass
+
+    def start(self):
+        if self._sep_thread:
+            thread = threading.Thread(target=self._start)
+            thread.start()
+        else:
+            self._start()
+
+    def stop(self):
+        self.running = False

@@ -20,6 +20,7 @@ from .exceptions import *
 from .stream import (
     Stream,
     NStream,
+    DepthStream,
 )
 from .depthmap import (
     StereoVision,

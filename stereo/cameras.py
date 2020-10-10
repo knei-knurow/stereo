@@ -8,8 +8,8 @@ import IPython
 import PIL.Image
 
 DEF_IDS = [0]
-DEF_WIDTH = 640
-DEF_HEIGHT = 480
+DEF_WIDTH = 1280
+DEF_HEIGHT = 720
 DEF_SIZE = (DEF_WIDTH, DEF_HEIGHT)
 DEF_FPS = 30
 DEF_MODE = 3
@@ -46,6 +46,8 @@ class Cameras:
         self.frames = []
         for _ in range(len(self.devices)):
             self.frames.append(np.zeros((self.height, self.width, 3), dtype=np.uint8))
+            
+        self.transform()
 
     @staticmethod
     def list_backends():
@@ -116,7 +118,7 @@ class Cameras:
         """
         cameras = []
         for device in self.devices:
-            camera = cv.VideoCapture(device, self.api)
+            camera = cv.VideoCapture(device)
             camera.set(cv.CAP_PROP_FRAME_WIDTH, self.width)
             camera.set(cv.CAP_PROP_FRAME_HEIGHT, self.height)
             cameras.append(camera)
@@ -192,7 +194,7 @@ class Cameras:
     def stream(self, update_fn=_stream_update, cleanup_fn=_stream_cleanup):
         cameras = []
         for device in self.devices:
-            camera = cv.VideoCapture(device, self.api)
+            camera = cv.VideoCapture(device)
             camera.set(cv.CAP_PROP_FRAME_WIDTH, self.width)
             camera.set(cv.CAP_PROP_FRAME_HEIGHT, self.height)
             cameras.append(camera)
