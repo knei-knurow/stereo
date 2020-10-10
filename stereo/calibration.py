@@ -60,7 +60,7 @@ class Calibration(ABC):
                 | cv.CALIB_CB_NORMALIZE_IMAGE 
                 | cv.CALIB_CB_FAST_CHECK
             )
-            
+            #
             # If no corners found, continue
             if not ret:
                 if return_nones:
@@ -298,6 +298,8 @@ class Calibration2Cams(Calibration):
             "right_reprojection_error":self.right_reprojection_error,
             "both_rot_matrix":self.both_rot_matrix,
             "both_trans_vec":self.both_trans_vec,
+            "width":self.width,
+            "height":self.height,
         }
         if numpy2list:
             for key, value in params.items():
@@ -347,6 +349,8 @@ class Calibration2Cams(Calibration):
         self.right_reprojection_error = params["right_reprojection_error"]
         self.both_rot_matrix = params["both_rot_matrix"]
         self.both_trans_vec = params["both_trans_vec"]
+        self.width = params["width"]
+        self.height = params["height"]
 
         return params
 

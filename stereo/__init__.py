@@ -21,5 +21,9 @@ from .stream import (
     Stream,
     NStream,
 )
+from .depthmap import (
+    StereoVision,
+    StereoVision2Cams,
+)
 
 start_logger()

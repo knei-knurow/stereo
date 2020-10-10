@@ -103,3 +103,5 @@ right_roi: !!python/tuple
 - 0
 - 1276
 - 1024
+width: 1280
+height: 1024

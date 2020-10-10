@@ -6,7 +6,6 @@ import sys
 import io
 import IPython
 import PIL.Image
-import ipywidgets
 
 DEF_IDS = [0]
 DEF_WIDTH = 640
