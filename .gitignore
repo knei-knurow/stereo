@@ -2,5 +2,4 @@ __pycache__
 .vscode
 .ipynb_checkpoints
 test.ipynb
-calibration-images/*.jpg
-calibration-images/*.png
+calibration-images/*
