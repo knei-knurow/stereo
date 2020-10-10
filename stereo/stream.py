@@ -6,6 +6,7 @@ import PIL.Image
 import ipywidgets
 import threading
 import logging
+import time
 
 class Stream(ABC):
     @abstractmethod
@@ -83,12 +84,23 @@ class DepthStream(Stream):
         super().__init__(cameras)
         self._sep_thread = sep_thread
         self.stereo = stereo
+        self.frames_count = 0
+        self.start_time = time.time()
+        self.last_time = time.time()
 
     def _setup(self, cameras):
         logging.info("Starting depth map stream.")
         self._update(cameras)
 
     def _update(self, cameras):
+        deltatime = (time.time() - self.start_time)
+        self.frames_count += 1
+        if not (self.frames_count % 10):
+            fps = 1 / (time.time() - self.last_time)
+            avg = self.frames_count / deltatime
+            print("fps: {:.2f}\tavg: {:.2f}".format(fps, avg), flush=True)
+        self.last_time = time.time()
+
         depth = self.stereo.calculate_depth(cameras.frames[0], cameras.frames[1])
         # depth2 = ((depth - depth.min()) * 255).astype(np.uint8)
         cv.imshow("Depth", depth)

@@ -11,7 +11,6 @@ class StereoVision():
     def get_depth(self):
         pass
 
-
 class StereoVision2Cams(StereoVision):
     def __init__(self, calibration):
         super().__init__(calibration)

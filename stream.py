@@ -13,5 +13,5 @@ stereo = st.StereoVision2Cams(calibration)
 
 # cameras.stream()
 
-stream = st.DepthStream(cameras, stereo, False)
+stream = st.DepthStream(cameras, stereo, True)
 stream.start()
