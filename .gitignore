@@ -5,3 +5,5 @@ test.ipynb
 calibration-images/*
 *.swp
 *.pyc
+test-videos/*
+

@@ -105,6 +105,7 @@ class Cameras:
                     args = transformation[1:]
                 else:
                     args = []
+                # function(self.frames[i], *args, dst=self.frames[i])
                 self.frames[i] = function(self.frames[i], *args)
 
     def capture_black_screen(self):
@@ -131,12 +132,11 @@ class Cameras:
                 raise CameraCaptureError("Unable to grab image from cam", camera)
 
         for idx, camera in enumerate(cameras):
-            ret, frame = camera.retrieve()
+            ret, self.frames[idx] = camera.retrieve()
             if not ret:
                 for c in cameras:
                     c.release()
                 raise CameraCaptureError("Unable to retrieve image from cam", camera)
-            self.frames[idx] = frame
         
         for camera in cameras:
             camera.release()
@@ -149,19 +149,19 @@ class Cameras:
         """Do the same what capture() but after all transformations convert colors
         to RGB.
         """
-        frames = self.capture()
-        for i in range(len(frames)):
-            frames[i] = cv.cvtColor(frames[i], cv.COLOR_BGR2RGB)
-        return frames
+        self.capture()
+        for i in range(len(self.frames)):
+            self.frames[i] = cv.cvtColor(self.frames[i], cv.COLOR_BGR2RGB)
+        return self.frames
 
     def capture_gray(self):
         """Do the same what capture() but after all transformations convert colors
         to grayscale.
         """
-        frames = self.capture()
-        for i in range(len(frames)):
-            frames[i] = cv.cvtColor(frames[i], cv.COLOR_BGR2GRAY)
-        return frames
+        self.capture()
+        for i in range(len(self.frames)):
+            self.frames[i] = cv.cvtColor(self.frames[i], cv.COLOR_BGR2GRAY)
+        return self.frames
 
     def show(self):
         """Show all frames using OpenCV imshow function."""
