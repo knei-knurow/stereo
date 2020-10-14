@@ -6,8 +6,6 @@ parser = argparse.ArgumentParser()
 parser.add_argument("L", help="left video filename", type=str)
 parser.add_argument("R", help="right video filename", type=str)
 parser.add_argument("calibration", help="calibration filename", type=str)
-parser.add_argument("--delay-l", help="start left video after delay-l frames")
-parser.add_argument("--delay-r", help="start right video after delay-r frames")
 args = parser.parse_args()
 
 
