@@ -80,13 +80,16 @@ class NStream(Stream):
         self.running = False
         
 class DepthStream(Stream):
-    def __init__(self, cameras, stereo, sep_thread=True):
+    def __init__(self, cameras, stereo, sep_thread=True, render_depth=True,
+        render_preview=False):
         super().__init__(cameras)
         self._sep_thread = sep_thread
         self.stereo = stereo
         self.frames_count = 0
         self.start_time = time.time()
         self.last_time = time.time()
+        self.render_depth = render_depth
+        self.render_preview = render_preview
 
     def _setup(self, cameras):
         logging.info("Starting depth map stream.")
@@ -101,11 +104,17 @@ class DepthStream(Stream):
             print("fps: {:.2f}\tavg: {:.2f}".format(fps, avg), flush=True)
         self.last_time = time.time()
 
-        depth = self.stereo.calculate_depth(cameras.frames[0], cameras.frames[1])
-        # depth2 = ((depth - depth.min()) * 255).astype(np.uint8)
-        cv.imshow("Depth", depth)
-        if cv.waitKey(1) == ord("q"):
-            return False
+        self.stereo.left, self.stereo.right = cameras.frames[0], cameras.frames[1]
+        depth = self.stereo.calculate_depth()
+        
+        if self.render_preview:
+            cv.imshow("Left", self.stereo.left)
+
+        if self.render_depth:
+            depth = cv.applyColorMap(depth, cv.COLORMAP_JET)
+            cv.imshow("Depth", depth)
+            if cv.waitKey(1) == ord("q"):
+                return False
         return self.running
 
     def _cleanup(self, cameras):

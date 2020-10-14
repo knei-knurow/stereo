@@ -8,6 +8,10 @@ class StereoVision():
         self.stereo = cv.StereoBM_create()
     
     @abstractmethod
+    def preprocess(self):
+        pass
+
+    @abstractmethod
     def get_depth(self):
         pass
 
@@ -35,15 +39,22 @@ class StereoVision2Cams(StereoVision):
         self.stereo.setSpeckleRange(16)
         self.stereo.setSpeckleWindowSize(45)
 
-        self.depth = None
+        self.depth = np.zeros((self.calibration.height, self.calibration.width),
+            dtype=np.float32)
+        self.left  = np.zeros((self.calibration.height, self.calibration.width),
+            dtype=np.uint8)
+        self.right  = np.zeros((self.calibration.height, self.calibration.width),
+            dtype=np.uint8)
 
-    def calculate_depth(self, left, right):
-        left = cv.remap(left, self.left_max_x, self.left_map_y, 
+    def preprocess_frames(self):
+        self.left = cv.remap(self.left, self.left_max_x, self.left_map_y, 
             cv.INTER_LINEAR
         )
-        right = cv.remap(right, self.right_max_x, self.right_map_y,
+        self.right = cv.remap(self.right, self.right_max_x, self.right_map_y,
             cv.INTER_LINEAR
         )
 
-        self.depth = self.stereo.compute(left, right) / 2048
+    def calculate_depth(self):
+        self.preprocess_frames()
+        self.depth = (self.stereo.compute(self.left, self.right)/ 2048 *255).astype(np.uint8)
         return self.depth
