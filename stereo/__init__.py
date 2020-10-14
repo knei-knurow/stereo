@@ -21,6 +21,7 @@ from .stream import (
     Stream,
     NStream,
     DepthStream,
+    NDepthStream
 )
 from .depthmap import (
     StereoVision,
