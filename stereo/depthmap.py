@@ -6,7 +6,12 @@ class StereoVision():
     def __init__(self, calibration):
         self.calibration = calibration
         self.stereo = cv.StereoBM_create()
-    
+        self.stereo.setMinDisparity(4)
+        self.stereo.setNumDisparities(128)
+        self.stereo.setBlockSize(21)
+        self.stereo.setSpeckleRange(16)
+        self.stereo.setSpeckleWindowSize(45)
+
     @abstractmethod
     def preprocess(self):
         pass
@@ -33,18 +38,15 @@ class StereoVision2Cams(StereoVision):
             (self.calibration.width, self.calibration.height), cv.CV_32FC1
         )
 
-        self.stereo.setMinDisparity(4)
-        self.stereo.setNumDisparities(128)
-        self.stereo.setBlockSize(21)
-        self.stereo.setSpeckleRange(16)
-        self.stereo.setSpeckleWindowSize(45)
-
         self.depth = np.zeros((self.calibration.height, self.calibration.width),
             dtype=np.float32)
         self.left  = np.zeros((self.calibration.height, self.calibration.width),
             dtype=np.uint8)
         self.right  = np.zeros((self.calibration.height, self.calibration.width),
             dtype=np.uint8)
+
+        self.stereo.setROI1(self.calibration.left_roi)
+        self.stereo.setROI2(self.calibration.right_roi)
 
     def preprocess_frames(self):
         self.left = cv.remap(self.left, self.left_max_x, self.left_map_y, 
