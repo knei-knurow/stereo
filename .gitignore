@@ -6,4 +6,6 @@ calibration-images/*
 *.swp
 *.pyc
 test-videos/*
+*.ts
+*.m3u8
 
