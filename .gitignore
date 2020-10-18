@@ -1,5 +1,6 @@
 __pycache__
 .vscode
+.vs
 .ipynb_checkpoints
 test.ipynb
 calibration-images/*
@@ -9,3 +10,24 @@ test-videos/*
 *.ts
 *.m3u8
 
+## Visual Studio
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
