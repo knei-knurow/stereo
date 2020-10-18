@@ -64,12 +64,13 @@ class Stream(ABC):
     def stop(self):
         self.running = False
 
+
 class NStream(Stream):
     def __init__(self, cameras, sep_thread=False):
         super().__init__(cameras)
         self.widgets = []
         for _ in range(len(self.cameras.devices)):
-            self.widgets.append(ipywidgets.Image(width=self.cameras.width))
+            self.widgets.append(ipywidgets.Image(width=480))
         self._sep_thread = sep_thread
 
     def _setup(self, cameras):
