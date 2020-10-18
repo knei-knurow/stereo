@@ -14,37 +14,34 @@
 #define TestCUDA true
 
 int main() {
-    std::clock_t begin = std::clock();
 
     try {
-        cv::String filename = "D:/images/cool/91ZyT2HE-rL._SX425_.jpg";
-        cv::Mat srcHost = cv::imread(filename, cv::IMREAD_GRAYSCALE);
+        cv::Mat mat0;
+        cv::VideoCapture camera0(0);
+        camera0.set(cv::CAP_PROP_FRAME_WIDTH, 1280);
+        camera0.set(cv::CAP_PROP_FRAME_HEIGHT, 1024);
+        camera0.set(cv::CAP_PROP_FPS, 30);
 
-        for (int i = 0; i < 1000; i++) {
-            if (TestCUDA) {
-                cv::cuda::GpuMat dst, src;
-                src.upload(srcHost);
 
-                //cv::cuda::threshold(src,dst,128.0,255.0, CV_THRESH_BINARY);
-                cv::cuda::bilateralFilter(src, dst, 3, 1, 1);
+        cv::Mat mat1;
+        cv::VideoCapture camera1(1);
+        camera1.set(cv::CAP_PROP_FRAME_WIDTH, 1280);
+        camera1.set(cv::CAP_PROP_FRAME_HEIGHT, 1024);
+        camera1.set(cv::CAP_PROP_FPS, 30);
+        double fps = 0;
+        while (true) {
+            
+            camera0.read(mat0);
+            camera1.read(mat1);
 
-                cv::Mat resultHost;
-                dst.download(resultHost);
-            }
-            else {
-                cv::Mat dst;
-                cv::bilateralFilter(srcHost, dst, 3, 1, 1);
-            }
-        }
-
-        //cv::imshow("Result",resultHost);
-        //cv::waitKey();
-
+            // cv::imshow("0", mat0);
+            // cv::imshow("1", mat1);
+            if (cv::waitKey(1) == 'q') break;
+        } 
     }
     catch (const cv::Exception& ex) {
         std::cout << "Error: " << ex.what() << std::endl;
     }
 
-    std::clock_t end = std::clock();
-    std::cout << double(end - begin) / CLOCKS_PER_SEC << std::endl;
+    return 0;
 }
