@@ -11,6 +11,9 @@
 #include <opencv2/cudaarithm.hpp>
 #include <opencv2/cudaimgproc.hpp>
 
+#include "calibration.h"
+#include "cameras.h"
+
 #define TestCUDA true
 
 int main() {

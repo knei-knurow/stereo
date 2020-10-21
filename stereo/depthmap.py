@@ -13,11 +13,7 @@ class StereoVision():
         self.stereo.setSpeckleWindowSize(45)
 
     @abstractmethod
-    def preprocess(self):
-        pass
-
-    @abstractmethod
-    def get_depth(self):
+    def calculate_depth(self):
         pass
 
 class StereoVision2Cams(StereoVision):
