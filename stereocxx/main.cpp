@@ -11,6 +11,8 @@
 #include <opencv2/cudaarithm.hpp>
 #include <opencv2/cudaimgproc.hpp>
 
+#include <json.hpp>
+
 #include "calibration.h"
 #include "cameras.h"
 
