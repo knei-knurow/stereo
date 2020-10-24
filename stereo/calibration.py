@@ -4,10 +4,11 @@ import cv2 as cv
 import numpy as np
 import os
 import yaml
+import json
 import logging
 from abc import ABC, abstractmethod
 
-DEF_CALIB_IMG_PATH = os.path.normpath("calibrated")
+DEF_CALIB_IMG_PATH = os.path.normpath("calibration-images")
 
 class Calibration(ABC):
     @abstractmethod
@@ -307,14 +308,19 @@ class Calibration2Cams(Calibration):
                     params[key] = value.tolist()
         return params
 
-    def save(self, filename):
+    def save(self, filename, format="json"):
         """Save important calibration parameters to the specified file."""
         logging.info("Saving important calibration parameters to {}."
             .format(filename)
         )
         params = self.get_dict(True)
+        
         with open(filename, "w") as file:
-            _ = yaml.dump(params, file)
+            if format == "yaml":
+                yaml.dump(params, file)
+            else:
+                json.dump(params, file)
+            
         return params
 
     def load(self, filename):
