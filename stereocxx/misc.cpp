@@ -5,9 +5,8 @@
 #include <chrono>
 #include "misc.h"
 
-const std::string& log(const std::string& msg,
-	const std::string& source, LogLevel level) {
-	
+
+const std::string& log(const std::string& msg, LogLevel level) {
 	// Displaying time
 	tm localTime;
 	std::chrono::system_clock::time_point t = std::chrono::system_clock::now();
@@ -26,13 +25,9 @@ const std::string& log(const std::string& msg,
 		<< std::setfill('0') << std::setw(3) << milliseconds
 		<< ' ';
 
-	// Displaying source
-	if (!source.empty()) {
-		stream << source << ' ';
-	}
-
 	// Displaying level
 	if (level == INFO) stream << "INFO";
+	else if (level == DEBUG) stream << "DEBUG";
 	else if (level == WARNING) stream << "WARNING";
 	else if (level == ERROR) stream << "ERROR";
 	else if (level == CRITICAL) stream << "CRITICAL";
@@ -50,22 +45,18 @@ const std::string& log(const std::string& msg,
 	return msg;
 }
 
-const std::string& info(const std::string& msg,
-	const std::string& source) {
-	return log(msg, source, INFO);
+const std::string& info(const std::string& msg) {
+	return log(msg, INFO);
 }
 
-const std::string& warning(const std::string& msg,
-	const std::string& source) {
-	return log(msg, source, WARNING);
+const std::string& warning(const std::string& msg) {
+	return log(msg, WARNING);
 }
 
-const std::string& error(const std::string& msg,
-	const std::string& source) {
-	return log(msg, source, ERROR);
+const std::string& error(const std::string& msg) {
+	return log(msg, ERROR);
 }
 
-const std::string& critical(const std::string& msg,
-	const std::string& source) {
-	return log(msg, source, CRITICAL);
+const std::string& critical(const std::string& msg) {
+	return log(msg, CRITICAL);
 }
