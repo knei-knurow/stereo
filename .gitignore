@@ -10,6 +10,9 @@ test-videos/*
 *.ts
 *.m3u8
 
+logs/*.log
+logs/*.txt
+
 ## Visual Studio
 *.rsuser
 *.suo

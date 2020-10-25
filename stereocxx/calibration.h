@@ -24,4 +24,6 @@ struct CalibParams2Cams {
 
 	cv::Mat both_rot_matrix = cv::Mat();
 	double both_trans_vec = 0;
+
+	CalibParams2Cams(std::string filename);
 };

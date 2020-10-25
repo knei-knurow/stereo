@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <ctime>
 #include <cmath>
 
@@ -14,10 +15,14 @@
 #include <json.hpp>
 
 #include "calibration.h"
+#include "misc.h"
 #include "cameras.h"
 
+using nlohmann::json;
 
 int main() {
+    info("Program is starting.", "main");
+
     auto cams = Cameras({ 0 });
     cams.capture();
 
