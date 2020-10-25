@@ -6,11 +6,18 @@
 
 using nlohmann::json;
 
-struct CalibParams2Cams {
+struct CalibParams {
 	bool calibrated = false;
 	unsigned width = 0;
 	unsigned height = 0;
 
+protected:
+	void json_to_cv_mat(const json& js, cv::Mat& mat);
+	void json_to_cv_rect(const json& js, cv::Rect& rect);
+};
+
+struct CalibParams2Cams 
+	: public CalibParams {
 	cv::Mat left_dist_coeff = cv::Mat();
 	cv::Mat left_matrix = cv::Mat();
 	cv::Mat left_proj = cv::Mat();
@@ -29,8 +36,4 @@ struct CalibParams2Cams {
 	cv::Mat both_trans_vec = cv::Mat();
 
 	CalibParams2Cams(std::string filename);
-
-private:
-	void json_to_cv_mat(const json& js, cv::Mat& mat);
-	void json_to_cv_rect(const json& js, cv::Rect& rect);
 };

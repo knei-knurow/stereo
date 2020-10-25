@@ -7,23 +7,6 @@
 #include <opencv2/core.hpp>
 #include <opencv2/videoio.hpp>
 
-//class CameraThread {
-//public:
-//	CameraThread(int source, unsigned width, unsigned height, unsigned fps,
-//		int mode);
-//	CameraThread(std::string source, unsigned width, unsigned height, unsigned fps,
-//		int mode);
-//
-//	std::atomic<cv::Mat>& get_mat();
-//	std::chrono::time_point<std::chrono::high_resolution_clock>& get_next_cap();
-//
-//private:
-//	bool _status;
-//	cv::VideoCapture _cam;
-//	std::atomic<cv::Mat> _mat;
-//	std::chrono::time_point<std::chrono::high_resolution_clock> _next_cap;
-//};
-
 class Cameras {
 public:
 	Cameras(std::vector<int> sources = {},

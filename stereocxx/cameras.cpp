@@ -3,33 +3,6 @@
 #include "misc.h"
 #include "cameras.h"
 
-//CameraThread::CameraThread(int source, unsigned width, unsigned height, unsigned fps, int mode) {
-//	info("Initializing camera from source: " + std::to_string(source));
-//	_mat = cv::Mat(height, width, CV_8UC3);
-//	_status = true;
-//	_status = _cam.open(source);
-//	if (!_status) {
-//		error("Unable to create camera from source: " + std::to_string(source) + ".");
-//		return;
-//	}
-//	_threads[i] = std::thread(&loop, i);
-//	set_prop(cv::CAP_PROP_FRAME_WIDTH, width);
-//	set_prop(cv::CAP_PROP_FRAME_HEIGHT, height);
-//	set_prop(cv::CAP_PROP_FPS, fps);
-//}
-//
-//CameraThread::CameraThread(std::string source, unsigned width, unsigned height, unsigned fps, int mode) {
-//
-//}
-//
-//std::atomic<cv::Mat>& CameraThread::get_mat() {
-//	
-//}
-//
-//std::chrono::time_point<std::chrono::high_resolution_clock>& CameraThread::get_next_cap() {
-//
-//}
-
 void Cameras::loop(size_t no) {
 	using namespace std::chrono_literals;
 
@@ -83,37 +56,37 @@ Cameras::Cameras(std::vector<int> sources, unsigned width, unsigned height, unsi
 	set_prop(cv::CAP_PROP_FRAME_HEIGHT, height);
 	set_prop(cv::CAP_PROP_FPS, fps);
 
-	_clock.now();
-	for (int i = 0; i < _size; i++) {
-		_threads[i] = std::thread(&Cameras::loop, this, i);
-	}
+	//_clock.now();
+	//for (int i = 0; i < _size; i++) {
+	//	_threads[i] = std::thread(&Cameras::loop, this, i);
+	//}
 }
 
 Cameras::~Cameras() {
-	for (int i = 0; i < _size; i++) {
-	}
+	//for (int i = 0; i < _size; i++) {
+	//}
 }
 
 bool Cameras::capture() {
 	bool ret = true;
 
-	//for (int i = 0; i < _size; i++) {
-	//	_status[i] = _cams[i].grab();
-	//	ret &= _status[i];
-	//	if (!_status[i]) {
-	//		error("Unable to grab image from camera no " + std::to_string(i) + ".");
-	//	}
-	//}
-	//
-	//for (int i = 0; i < _size; i++) {
-	//	if (_status[i]) {
-	//		_status[i] = _cams[i].retrieve(_frames[i]);
-	//		ret &= _status[i];
-	//		if (!_status[i]) {
-	//			error("Unable to retrieve image from camera no " + std::to_string(i) + ".");
-	//		}
-	//	}
-	//}
+	for (int i = 0; i < _size; i++) {
+		_status[i] = _cams[i].grab();
+		ret &= _status[i];
+		if (!_status[i]) {
+			error("Unable to grab image from camera no " + std::to_string(i) + ".");
+		}
+	}
+	
+	for (int i = 0; i < _size; i++) {
+		if (_status[i]) {
+			_status[i] = _cams[i].retrieve(_frames[i]);
+			ret &= _status[i];
+			if (!_status[i]) {
+				error("Unable to retrieve image from camera no " + std::to_string(i) + ".");
+			}
+		}
+	}
 	return ret;
 }
 

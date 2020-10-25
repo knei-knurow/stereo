@@ -54,7 +54,7 @@ CalibParams2Cams::CalibParams2Cams(std::string filename) {
 	calibrated = true;
 }
 
-void CalibParams2Cams::json_to_cv_mat(const json& js, cv::Mat& mat) {
+void CalibParams::json_to_cv_mat(const json& js, cv::Mat& mat) {
 	auto v = js.get<std::vector<std::vector<double>>>();
 	mat = cv::Mat(v.size(), v.at(0).size(), CV_64FC1);
 	for (int i = 0; i < mat.rows; ++i)
@@ -62,7 +62,7 @@ void CalibParams2Cams::json_to_cv_mat(const json& js, cv::Mat& mat) {
 			mat.at<double>(i, j) = v.at(i).at(j);
 }
 
-void CalibParams2Cams::json_to_cv_rect(const json& js, cv::Rect& rect) {
+void CalibParams::json_to_cv_rect(const json& js, cv::Rect& rect) {
 	auto v = js.get<std::vector<int>>();
 	rect = cv::Rect(v[0], v[1], v[2], v[3]);
 }

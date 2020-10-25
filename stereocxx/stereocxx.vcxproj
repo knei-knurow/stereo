@@ -87,10 +87,12 @@
     <ClCompile Include="cameras.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="misc.cpp" />
+    <ClCompile Include="depth-map.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="calibration.h" />
     <ClInclude Include="cameras.h" />
+    <ClInclude Include="depth-map.h" />
     <ClInclude Include="misc.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
