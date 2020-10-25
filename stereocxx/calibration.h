@@ -2,6 +2,9 @@
 #include <opencv2/core.hpp>
 #include <vector>
 #include <array>
+#include <json.hpp>
+
+using nlohmann::json;
 
 struct CalibParams2Cams {
 	bool calibrated = false;
@@ -23,7 +26,11 @@ struct CalibParams2Cams {
 	double right_reprojection_error = 0;
 
 	cv::Mat both_rot_matrix = cv::Mat();
-	double both_trans_vec = 0;
+	cv::Mat both_trans_vec = cv::Mat();
 
 	CalibParams2Cams(std::string filename);
+
+private:
+	void json_to_cv_mat(const json& js, cv::Mat& mat);
+	void json_to_cv_rect(const json& js, cv::Rect& rect);
 };

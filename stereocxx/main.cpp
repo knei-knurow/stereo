@@ -22,6 +22,7 @@ using nlohmann::json;
 
 int main() {
     info("Program is starting.", "main");
+    CalibParams2Cams calib("../calibrated/2cam-usb-12cm-v1.json");
 
     auto cams = Cameras({ 0 });
     cams.capture();
