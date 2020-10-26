@@ -54,5 +54,6 @@ class StereoVision2Cams(StereoVision):
 
     def calculate_depth(self):
         self.preprocess_frames()
-        self.depth = (self.stereo.compute(self.left, self.right)/ 2048 *255).astype(np.uint8)
+        # self.depth = (self.stereo.compute(self.left, self.right)/ 2096 *255).astype(np.uint8)
+        self.depth = (self.stereo.compute(self.left, self.right)) #.astype(np.uint8)
         return self.depth

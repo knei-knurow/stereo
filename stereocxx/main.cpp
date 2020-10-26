@@ -32,6 +32,17 @@ int main() {
     cv::Mat depth;
     StereoVision2Cams stereo(calib);
     
+    auto left = cv::imread("../test-images/left/ksiazki.jpg");
+    auto right = cv::imread("../test-images/right/ksiazki.jpg");
+    cv::cvtColor(left, left, cv::COLOR_BGR2GRAY);
+    cv::cvtColor(right, right, cv::COLOR_BGR2GRAY);
+    stereo.calculate_depth(left, right, depth);
+    //depth.convertTo(depth, CV_8U);
+    //cv::applyColorMap(depth, depth, cv::COLORMAP_JET);
+    cv::imshow("depth", depth);
+    cv::waitKey(0);
+    return 0;
+
     while (1) {
         cams.capture();
         cv::cvtColor(cams.frame(0), cams.frame(0), cv::COLOR_BGR2GRAY);
