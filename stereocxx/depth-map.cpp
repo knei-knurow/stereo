@@ -44,4 +44,5 @@ void StereoVision2Cams::calculate_depth(cv::Mat& left, cv::Mat& right, cv::Mat& 
 	cv::remap(left, left, _left_map_x, _left_map_y, cv::INTER_LINEAR);
 	cv::remap(right, right, _right_map_x, _right_map_y, cv::INTER_LINEAR);
 	_stereo->compute(left, right, depth);
+	depth.convertTo(depth, CV_8UC1, 255.0 / 2048.0, 0);
 }

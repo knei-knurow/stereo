@@ -94,6 +94,7 @@
     <ClInclude Include="cameras.h" />
     <ClInclude Include="depth-map.h" />
     <ClInclude Include="misc.h" />
+    <ClInclude Include="transformations.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

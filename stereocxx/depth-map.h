@@ -25,3 +25,4 @@ private:
 	cv::Mat _right_map_y;
 	cv::Ptr<cv::StereoBM> _stereo;
 };
+
