@@ -88,7 +88,7 @@ def main():
 		camR.shot()
 
 		camL.show()
-	    camR.show()			
+		camR.show()			
 
 	    if(cv.waitKey(1) == ord('q')):
 			camL.conv_n_save(count)
