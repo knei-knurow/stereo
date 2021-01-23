@@ -16,8 +16,8 @@ class Calibration(ABC):
         self.calibrated = False
 
         self.calibration_path = DEF_CALIB_IMG_PATH
-        self.pattern_size = (7, 7)
-        self.pattern_square_size = 1.0
+        self.pattern_size = (12, 8) #number of 'cross points', not suares!  (sq - 1)
+        self.pattern_square_size = 2.0
         
         self.width = None
         self.height = None
