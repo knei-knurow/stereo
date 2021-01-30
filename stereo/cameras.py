@@ -6,6 +6,7 @@ import sys
 import io
 import IPython
 import PIL.Image
+from datetime import datetime
 
 DEF_IDS = [0]
 DEF_WIDTH = 1280
@@ -15,7 +16,7 @@ DEF_FPS = 30
 DEF_MODE = 3
 
 _platform = platform.system()
-if  _platform == "Windows":
+if _platform == "Windows":
     # DEF_API = cv.CAP_DSHOW # Weird errors with messed up image array
     DEF_API = cv.CAP_MSMF
 elif _platform == "Linux":
@@ -26,11 +27,13 @@ else:
         _backends.append(value)
     DEF_API = _backends[0]
 
+
 class Cameras:
-    def __init__(self, devices=DEF_IDS, size=DEF_SIZE, fps=DEF_FPS, 
-        mode=DEF_MODE, transformations=None, api=DEF_API):
+    def __init__(self, devices=DEF_IDS, size=DEF_SIZE, fps=DEF_FPS,
+                 mode=DEF_MODE, transformations=None, api=DEF_API,
+                 print_date=False):
         if not isinstance(devices, list):
-            self.devices = [devices,]
+            self.devices = [devices, ]
         else:
             self.devices = devices
         self.width = size[0]
@@ -38,6 +41,7 @@ class Cameras:
         self.fps = fps
         self.mode = mode
         self.api = api
+        self.print_date = print_date
         if transformations is None:
             self.transformations = []
         else:
@@ -45,8 +49,9 @@ class Cameras:
 
         self.frames = []
         for _ in range(len(self.devices)):
-            self.frames.append(np.zeros((self.height, self.width, 3), dtype=np.uint8))
-            
+            self.frames.append(
+                np.zeros((self.height, self.width, 3), dtype=np.uint8))
+
         self.transform()
 
     @staticmethod
@@ -82,19 +87,19 @@ class Cameras:
                 "videoconvert ! "
                 "video/x-raw, format=(string)BGR ! appsink"
                 % (
-                    device, # camera id
-                    self.mode, # mode
-                    self.width, # width
-                    self.height, # height
-                    self.fps, # frame rate
-                    0, # flip method
-                    self.width, # display width
-                    self.height, # display height
+                    device,  # camera id
+                    self.mode,  # mode
+                    self.width,  # width
+                    self.height,  # height
+                    self.fps,  # frame rate
+                    0,  # flip method
+                    self.width,  # display width
+                    self.height,  # display height
                 )
             )
 
     def transform(self):
-        """For each frame apply given transformations which should be a list 
+        """For each frame apply given transformations which should be a list
         like that: [function, arg1, arg2, ...]. Each transformation function has
         to return a new image. Transformations are executed one by one.
         """
@@ -129,15 +134,19 @@ class Cameras:
             if not ret:
                 for c in cameras:
                     c.release()
-                raise CameraCaptureError("Unable to grab image from cam", camera)
+                raise CameraCaptureError(
+                    "Unable to grab image from cam", camera)
 
         for idx, camera in enumerate(cameras):
             ret, self.frames[idx] = camera.retrieve()
             if not ret:
                 for c in cameras:
                     c.release()
-                raise CameraCaptureError("Unable to retrieve image from cam", camera)
-        
+                raise CameraCaptureError(
+                    "Unable to retrieve image from cam", camera)
+            elif self.print_date:
+                self.frames[idx] = self.write_date(self.frames[idx])
+
         for camera in cameras:
             camera.release()
 
@@ -163,11 +172,20 @@ class Cameras:
             self.frames[i] = cv.cvtColor(self.frames[i], cv.COLOR_BGR2GRAY)
         return self.frames
 
+    @staticmethod
+    def write_date(frame):
+        txt = datetime.today().isoformat()
+        cv.putText(frame, txt, (25, 85),
+                   cv.FONT_HERSHEY_PLAIN, 4, (0, 0, 0), 5, cv.LINE_8)
+        cv.putText(frame, txt, (20, 80),
+                   cv.FONT_HERSHEY_PLAIN, 4, (255, 255, 255), 5, cv.LINE_8)
+        return frame
+
     def show(self):
         """Show all frames using OpenCV imshow function."""
         for idx, frame in enumerate(self.frames):
             cv.imshow("Frame " + str(idx), frame)
-        
+
         cv.waitKey(0)
         cv.destroyAllWindows()
 
@@ -190,7 +208,7 @@ class Cameras:
 
     def _stream_cleanup(self):
         cv.destroyAllWindows()
- 
+
     def stream(self, update_fn=_stream_update, cleanup_fn=_stream_cleanup):
         cameras = []
         for device in self.devices:
@@ -198,7 +216,7 @@ class Cameras:
             camera.set(cv.CAP_PROP_FRAME_WIDTH, self.width)
             camera.set(cv.CAP_PROP_FRAME_HEIGHT, self.height)
             cameras.append(camera)
-        
+
         running = True
         try:
             while running:
@@ -219,6 +237,8 @@ class Cameras:
                         raise CameraCaptureError(
                             "Unable to retrieve image from cam", camera
                         )
+                    elif self.print_date:
+                        frame = self.write_date(frame)
                     self.frames[idx] = frame
 
                 self.transform()
@@ -228,7 +248,7 @@ class Cameras:
 
         except KeyboardInterrupt:
             pass
-        
+
         for camera in cameras:
             camera.release()
 
