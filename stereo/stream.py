@@ -177,6 +177,7 @@ class NDepthStream(Stream):
         self.stereo.left = cameras.frames[0]
         self.stereo.right = cameras.frames[1]
         depth = self.stereo.calculate_depth()
+
         depth = cv.applyColorMap(depth, cv.COLORMAP_JET)
         depth = cv.cvtColor(depth, cv.COLOR_BGR2RGB)
 
